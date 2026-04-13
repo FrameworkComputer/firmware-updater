@@ -1,9 +1,9 @@
 name: Snap
 
-#on:
+on:
 #  schedule:
 #  - cron:  '45 6 * * *'
-#  workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
   build:
