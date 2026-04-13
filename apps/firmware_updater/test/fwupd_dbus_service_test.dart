@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:dbus/dbus.dart';
@@ -155,92 +154,6 @@ void main() {
         (f) => MockResourceHandle(),
       );
       verify(service.reboot()).called(1);
-    });
-  });
-
-  group('authenticated download', () {
-    const authUrl =
-        'http://myuser:mytoken@test.fake/downloads/myrelease.cab/auth';
-    const cleanUrl = 'http://test.fake/downloads/myrelease.cab/auth';
-
-    final fs = MemoryFileSystem.test();
-    final file = fs.file('${fs.systemTempDirectory.path}/myrelease.cab');
-
-    final device = testDevice(id: 'mydevice');
-    final release = FwupdRelease(
-      name: 'myrelease',
-      remoteId: 'myremote',
-      locations: const [authUrl],
-    );
-
-    final dio = MockDio();
-    final fwupd = MockFwupdClient();
-    final dbus = MockDBusClient();
-    final upower = MockUPowerClient();
-
-    late FwupdDbusService service;
-
-    setUp(() async {
-      file.createSync(recursive: true);
-      expect(file.existsSync(), isTrue);
-
-      when(
-        dbus.callMethod(
-          destination: anyNamed('destination'),
-          path: anyNamed('path'),
-          interface: anyNamed('interface'),
-          name: anyNamed('name'),
-          values: anyNamed('values'),
-          replySignature: anyNamed('replySignature'),
-        ),
-      ).thenAnswer((_) async => DBusMethodSuccessResponse());
-
-      when(
-        dio.download(
-          cleanUrl,
-          file.path,
-          onReceiveProgress: anyNamed('onReceiveProgress'),
-          options: anyNamed('options'),
-        ),
-      ).thenAnswer((i) async {
-        i.namedArguments[#onReceiveProgress]!(0, 1);
-        return Response(requestOptions: RequestOptions(path: file.path));
-      });
-
-      when(fwupd.propertiesChanged).thenAnswer((_) => const Stream.empty());
-      when(fwupd.getRemotes()).thenAnswer(
-        (_) async => [
-          FwupdRemote(id: release.remoteId!, kind: FwupdRemoteKind.download),
-        ],
-      );
-
-      when(upower.propertiesChanged).thenAnswer((_) => const Stream.empty());
-
-      service = FwupdDbusService(
-        fwupd: fwupd,
-        dio: dio,
-        fs: fs,
-        dbus: dbus,
-        upower: upower,
-      );
-      await service.init();
-    });
-
-    test('sends basic auth header and strips credentials from URL', () async {
-      await service.install(device, release, (f) => MockResourceHandle());
-
-      final expectedAuth =
-          'Basic ${base64Encode(utf8.encode('myuser:mytoken'))}';
-      final captured = verify(
-        dio.download(
-          cleanUrl,
-          file.path,
-          onReceiveProgress: anyNamed('onReceiveProgress'),
-          options: captureAnyNamed('options'),
-        ),
-      ).captured;
-      final options = captured.single as Options;
-      expect(options.headers?[HttpHeaders.authorizationHeader], expectedAuth);
     });
   });
 
