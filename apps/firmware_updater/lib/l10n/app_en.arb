@@ -100,6 +100,8 @@
   "fwupdStatusShutdown": "The daemon is shutting down",
   "guid": "GUIDs",
   "installError": "Failed to install firmware!",
+  "daemonError": "Could not connect to fwupd service",
+  "@daemonError": {},
   "noDevicesFound": "No devices found",
   "ok": "OK",
   "olderVersions": "Older Versions",

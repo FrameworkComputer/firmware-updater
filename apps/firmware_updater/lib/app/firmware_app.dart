@@ -58,7 +58,30 @@ class _FirmwareAppState extends State<FirmwareApp> {
                   DeviceTile.create(context, device: store.devices[index]),
               emptyBuilder: (_) => Scaffold(
                 appBar: YaruWindowTitleBar(title: Text(l10n.appTitle)),
-                body: Center(child: Text(l10n.noDevicesFound)),
+                body: Center(
+                  child: store.error != null
+                      ? Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.error_outline, size: 48),
+                              const SizedBox(height: 16),
+                              Text(
+                                l10n.daemonError,
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              SelectableText(
+                                store.error!,
+                                style: Theme.of(context).textTheme.bodySmall,
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        )
+                      : Text(l10n.noDevicesFound),
+                ),
               ),
             ),
           )

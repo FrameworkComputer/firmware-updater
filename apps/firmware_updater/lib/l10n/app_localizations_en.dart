@@ -309,6 +309,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get installError => 'Failed to install firmware!';
 
   @override
+  String get daemonError => 'Could not connect to fwupd service';
+
+  @override
   String get noDevicesFound => 'No devices found';
 
   @override

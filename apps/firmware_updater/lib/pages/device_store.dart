@@ -15,9 +15,11 @@ class DeviceStore extends SafeChangeNotifier {
   StreamSubscription<FwupdDevice>? _deviceAdded;
   StreamSubscription<FwupdDevice>? _deviceRemoved;
   bool _showReleases = false;
+  String? _error;
 
   List<FwupdDevice> get devices => _devices;
   bool get showReleases => _showReleases;
+  String? get error => _error;
 
   set showReleases(bool value) {
     if (value == _showReleases) return;
@@ -63,12 +65,16 @@ class DeviceStore extends SafeChangeNotifier {
   Future<void> refresh() {
     return _service.getDevices().then(
       (devices) {
+        _error = null;
         _devices = devices.where((device) => device.isUpdatable).toList();
         log.debug('${_devices.length} devices');
         notifyListeners();
       },
       onError: (e) {
         log.error('failed to get devices: $e');
+        _error = e.toString();
+        _devices = [];
+        notifyListeners();
       },
     );
   }

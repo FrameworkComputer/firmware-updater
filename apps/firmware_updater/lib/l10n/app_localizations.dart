@@ -782,6 +782,12 @@ abstract class AppLocalizations {
   /// **'Failed to install firmware!'**
   String get installError;
 
+  /// No description provided for @daemonError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect to fwupd service'**
+  String get daemonError => 'Could not connect to fwupd service';
+
   /// No description provided for @noDevicesFound.
   ///
   /// In en, this message translates to:
