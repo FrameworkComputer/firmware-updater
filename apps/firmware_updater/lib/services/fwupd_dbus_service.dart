@@ -210,8 +210,6 @@ class FwupdDbusService extends FwupdService {
 
   Future<File> _downloadRelease(String url) async {
     final uri = Uri.parse(url);
-    log.debug('raw release URL: hasUserInfo=${uri.userInfo.isNotEmpty}, '
-        'path=${uri.path}, host=${uri.host}');
     // Strip credentials from the URL to avoid leaking them in logs/filenames
     final cleanUri = uri.replace(userInfo: '');
     // fwupd appends /auth to URLs for remotes that require authentication;
@@ -232,9 +230,6 @@ class FwupdDbusService extends FwupdService {
       if (uri.userInfo.isNotEmpty) {
         headers[HttpHeaders.authorizationHeader] =
             'Basic ${base64Encode(utf8.encode(uri.userInfo))}';
-        log.debug('using basic auth for download');
-      } else {
-        log.debug('no credentials in URL, downloading without auth');
       }
       return await _dio.download(
         cleanUri.toString(),
@@ -244,22 +239,15 @@ class FwupdDbusService extends FwupdService {
         },
         options: Options(headers: headers),
       ).then((response) => _fs.file(path));
-    } on DioException catch (e) {
-      log.error('download failed: ${e.response?.statusCode} '
-          '${e.response?.statusMessage} for $cleanUri');
-      rethrow;
     } finally {
       _setDownloadProgress(null);
     }
   }
 
   Future<File> _fetchRelease(FwupdRelease release) async {
-    log.debug('fetchRelease: remoteId=${release.remoteId}, '
-        'locations=${release.locations}');
     final remote = await _fwupd.getRemotes().then((remotes) {
       return remotes.firstWhere((remote) => remote.id == release.remoteId);
     });
-    log.debug('remote: id=${remote.id}, kind=${remote.kind}');
 
     assert(release.locations.isNotEmpty, 'TODO: handle multiple locations');
 
