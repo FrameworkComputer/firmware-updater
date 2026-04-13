@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:collection/collection.dart';
@@ -208,16 +209,35 @@ class FwupdDbusService extends FwupdService {
   }
 
   Future<File> _downloadRelease(String url) async {
-    final path = p.join(_fs.systemTempDirectory.path, p.basename(url));
-    log.debug('download $url to $path');
+    final uri = Uri.parse(url);
+    // Strip credentials from the URL to avoid leaking them in logs/filenames
+    final cleanUri = uri.replace(userInfo: '');
+    // fwupd appends /auth to URLs for remotes that require authentication;
+    // strip it to derive the actual firmware filename for the temp file.
+    var uriPath = cleanUri.path;
+    if (uriPath.endsWith('/auth')) {
+      uriPath = uriPath.substring(0, uriPath.length - '/auth'.length);
+    }
+    final path = p.join(_fs.systemTempDirectory.path, p.basename(uriPath));
+    log.debug('download $cleanUri to $path');
     try {
+      final headers = <String, dynamic>{
+        HttpHeaders.userAgentHeader: _userAgent,
+      };
+      // fwupd embeds HTTP Basic Auth credentials in the URL for remotes that
+      // require authentication (e.g. LVFS embargo remotes). Dio does not
+      // automatically extract userinfo from URLs, so we need to do it manually.
+      if (uri.userInfo.isNotEmpty) {
+        headers[HttpHeaders.authorizationHeader] =
+            'Basic ${base64Encode(utf8.encode(uri.userInfo))}';
+      }
       return await _dio.download(
-        url,
+        cleanUri.toString(),
         path,
         onReceiveProgress: (recvd, total) {
           _setDownloadProgress(100 * recvd ~/ total);
         },
-        options: Options(headers: {HttpHeaders.userAgentHeader: _userAgent}),
+        options: Options(headers: headers),
       ).then((response) => _fs.file(path));
     } finally {
       _setDownloadProgress(null);
